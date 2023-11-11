@@ -1,5 +1,5 @@
 #  Getting into Unreal with C++ Part 6
-> This repository supports the YouTube videos:
+> This repository supports the YouTube videos:  
 > [Getting into Unreal with C++ Part 6A](https://www.youtube.com/watch?v=ErVcuQXTm_c)  
 > and  
 > [Getting into Unreal with C++ Part 6B](https://www.youtube.com/watch?v=A9I4Z-_910Y)  
