@@ -3,11 +3,22 @@
 #include "CharacterBB.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "HudBB.h"
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
+#include "GameFramework/GameModeBase.h"
+#include "Kismet/GameplayStatics.h"
+
+class IImageWrapper;
 
 void APlayerControllerBBBase::OnPossess(APawn* aPawn)
 {
 	// Call the parent method, to let it do anything it needs to
 	Super::OnPossess(aPawn);
+
+	// Store a reference to the HUD
+	PlayerHud = Cast<AHudBB>(GetHUD());
+	checkf(PlayerHud, TEXT("Unable to get reference to the HUD"));
 
 	// Store a reference to the Player's Pawn
 	PlayerCharacter = Cast<ACharacterBB>(aPawn);
@@ -56,6 +67,13 @@ void APlayerControllerBBBase::OnPossess(APawn* aPawn)
 	if (ActionToggleSprint)
 		EnhancedInputComponent->BindAction(ActionToggleSprint, ETriggerEvent::Triggered, this,
 		                                   &APlayerControllerBBBase::HandleToggleSprint);
+
+	if (ActionCycleUIMode)
+		EnhancedInputComponent->BindAction(ActionCycleUIMode, ETriggerEvent::Triggered, this,
+		                                   &APlayerControllerBBBase::HandleCycleUIMode);
+
+
+	GEngine->GameViewport->OnScreenshotCaptured().AddUObject(this, &APlayerControllerBBBase::AcceptScreenshot);
 }
 
 void APlayerControllerBBBase::OnUnPossess()
@@ -93,7 +111,6 @@ void APlayerControllerBBBase::HandleMove(const FInputActionValue& InputActionVal
 void APlayerControllerBBBase::HandleJump()
 {
 	// Input is 'Digital' (value not used here)
-
 	// Make the Player's Character Pawn jump, disabling crouch if it was active
 	if (PlayerCharacter)
 	{
@@ -118,8 +135,32 @@ void APlayerControllerBBBase::HandleToggleCrouch()
 		PlayerCharacter->UnCrouch();
 	else
 		PlayerCharacter->Crouch();
+}
 
+void APlayerControllerBBBase::HandleCycleUIMode()
+{
+	if (PlayerHud)
+		PlayerHud->CycleToNextViewMode();
+}
 
+void APlayerControllerBBBase::AcceptScreenshot(int Width, int Height, const TArray<FColor>& Colors)
+{
+	static int32 Index = 0;
 
-	
+	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(
+		FName("ImageWrapper"));
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
+
+	// Provide image wrapper with raw pixels (TArray<FColor>)
+	ImageWrapper->SetRaw(&Colors[0], Colors.Num() * sizeof(FColor), Width, Height, ERGBFormat::BGRA, 8);
+
+	FString SaveLoc = FString::Printf(TEXT("F:\\Work\\Projects\\YetiGame\\SS_%d.png"), Index);
+	Index++;
+
+	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [ImageWrapper,SaveLoc]()
+	{
+		// Get the image using 90% JPEG compression
+		const TArray64<uint8> CompressedImage = ImageWrapper->GetCompressed(90);
+		FFileHelper::SaveArrayToFile(CompressedImage, *SaveLoc);
+	});
 }

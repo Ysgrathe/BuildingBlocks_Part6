@@ -11,6 +11,7 @@
 class UEnhancedInputComponent;
 class ACharacterBB;
 class UInputMappingContext;
+class AHudBB;
 
 UCLASS(Abstract)
 class APlayerControllerBBBase : public APlayerController
@@ -40,6 +41,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Player Input|Character Movement")
 	TObjectPtr<UInputAction> ActionPsiBlast = nullptr;
 
+	// The Input Action to map to cycle UI display mode.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Player Input|UI")
+	TObjectPtr<UInputAction> ActionCycleUIMode = nullptr;
+
 	// The Input Mapping Context to use. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Player Input|Character Movement")
 	TObjectPtr<UInputMappingContext> InputMappingContent = nullptr;
@@ -52,7 +57,10 @@ protected:
 	void HandlePsiBlast();
 	void HandleToggleSprint();
 	void HandleToggleCrouch();
+	void HandleCycleUIMode();
 
+
+	void         AcceptScreenshot(int Width, int Height, const TArray<FColor>& Colors);
 	virtual void OnPossess(APawn* aPawn) override;
 	virtual void OnUnPossess() override;
 
@@ -65,6 +73,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<ACharacterBB> PlayerCharacter = nullptr;
 
+	// Used to store a reference to the pawn we are controlling.
+	UPROPERTY()
+	TObjectPtr<AHudBB> PlayerHud = nullptr;
+
+
 	GENERATED_BODY()
 };
- 
